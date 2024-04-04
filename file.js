@@ -10,16 +10,26 @@ const center = new Client({
 const client2 = new Client({
   host: 'localhost',
   user: 'nikaostroverkh',
-  port: 2002,
+  port: 2008,
   database: 'postgres',
 });
 
 const client3 = new Client({
   host: 'localhost',
   user: 'nikaostroverkh',
-  port: 3000,
+  port: 4000,
   database: 'postgres',
 });
+
+const front1 = {
+  db: client3,
+  front_port: 4090,
+};
+
+const front2 = {
+  db: client2,
+  front_port: 4100,
+};
 
 center.connect();
 client2.connect();
@@ -76,7 +86,7 @@ async function Select_2() {
   }
 }
 
-//3)	Усі ремонти за товаром у всіх сервісах.
+//3)	Усі ремонти за продуктом у всіх сервісах.
 async function Select_3() {
   try {
     const repairsQuery = center.query(`SELECT talon_id FROM talons where product_id = ${5}`);
@@ -112,7 +122,7 @@ async function Select_4() {
     const [repairsResult, detailsResult] = await Promise.all([repairsQuery, detailsQuery]);
     const data = repairsResult.rows.concat(detailsResult.rows);
 
-    console.log('Result: ', data);
+    console.log('Current Repairs: ', data);
   } catch (err) {
     console.error('Error:', err.message);
   }
@@ -167,6 +177,152 @@ async function Select_5() {
       );
       console.log('created!');
     }
+    console.log('такий ремонт вже існує!');
+  } catch (err) {
+    console.error('Error:', err.message);
+  }
+}
+
+//6)	Передача ремонту в інший сервіс
+async function Select_6() {
+  try {
+    // - есть бд с ремонтами
+    // - редактируем поле cur_sc_id, записывая туда  серв. центр, куда надо среплицировать данные про ремонт
+    // - отправляем запрос на репликацию в этот серв. центр
+    const from_sc_id = 1;
+    const to_sc_id = 2;
+
+    const replica_id = 2;
+
+    let repairsQuery1;
+    let check;
+    switch (from_sc_id) {
+      case 1:
+        repairsQuery1 = client3.query(
+          `UPDATE repairs SET cur_sc_id = ${to_sc_id} where repair_id = ${replica_id} RETURNING *`,
+        );
+        check = client2.query(`SELECT * FROM repairs`);
+        break;
+      case 2:
+        repairsQuery1 = client2.query(
+          `UPDATE repairs SET cur_sc_id = ${to_sc_id} where repair_id = ${replica_id} RETURNING *`,
+        );
+        check = client3.query(`SELECT repair_id FROM repairs`);
+        break;
+    }
+
+    const [repairsResult1, rep_id] = await Promise.all([repairsQuery1, check]);
+
+    if (
+      rep_id.rows
+        .map((res) => {
+          return { talon_id: res.talon_id, isended: res.isended };
+        })
+        .find(() => {
+          return {
+            talon_id: repairsResult1.rows[0].talon_id,
+            isended: repairsResult1.rows[0].isended,
+          };
+        })
+    ) {
+      console.log('ремонт вже репліковано');
+      return;
+    }
+
+    if (repairsResult1 && repairsResult1.rows && repairsResult1.rows.length > 0) {
+      const updatedRow = repairsResult1.rows[0];
+
+      const maxRepairId = Math.max(...rep_id.rows.map((row) => row.repair_id));
+
+      switch (from_sc_id) {
+        case 1:
+          client2.query(
+            `INSERT INTO repairs (repair_id, talon_id, sc_id, start_date, isended, summary, cur_sc_id) VALUES (${
+              maxRepairId + 1
+            }, ${updatedRow.talon_id}, ${updatedRow.sc_id}, '${updatedRow.start_date}', ${
+              updatedRow.isended
+            }, '${updatedRow.summary}', ${updatedRow.cur_sc_id})`,
+          );
+          break;
+        case 2:
+          client3.query(`INSERT INTO repairs (repair_id, talon_id, sc_id, start_date, isended, summary, cur_sc_id) VALUES
+          (${maxRepairId + 1}, ${updatedRow.talon_id}, ${updatedRow.sc_id}, '${
+            updatedRow.start_date
+          }', ${updatedRow.isended}, '${updatedRow.summary}', ${updatedRow.cur_sc_id})`);
+          break;
+      }
+    }
+  } catch (err) {
+    console.error('Error:', err.message);
+  }
+}
+
+const temp_request_7 = {
+  repair: {
+    repair_id: 8,
+    talon_id: 2,
+    sc_id: 1,
+    isended: true,
+    summary: 'potato true',
+    cur_sc_id: 1,
+  },
+  //4090 - client3
+  front_port: 4090,
+};
+
+//7)	Редагування
+async function Select_7() {
+  try {
+    // транзакція: перевірити чи не заблокований, заблокувати, змінити у конкретній, змінити у інших, зняти блокування (флаг редагування (блокування читання) для розробника)
+    /* 
+    Статуси для доступу до ремонтів
+        0 - дозволено читання та редагування
+        1 - дозволено читання, заборонено редагування
+    */
+    switch (temp_request_7.front_port) {
+      //
+      //client_port |   db    |      data
+      //------------+---------+--------------
+      //    4090    | client3 | repairsResult2
+      //    4100    | client2 | repairsResult
+      //
+      case 4090: {
+        const repairsQuery1 = client2.query(
+          `SELECT repair_id, talon_id, isended FROM repairs WHERE talon_id = ${temp_request_7.repair.talon_id} and isended = ${temp_request_7.repair.isended};`,
+        );
+        const [repairsResult] = await Promise.all([repairsQuery1]);
+        if (repairsResult.rows[0])
+          client2.query(
+            `UPDATE repairs SET summary = '${temp_request_7.repair.summary}' where repair_id = ${repairsResult.rows[0].repair_id};`,
+          );
+        client3.query(
+          `UPDATE repairs SET summary = '${temp_request_7.repair.summary}' where repair_id = ${temp_request_7.repair.repair_id};`,
+        );
+        break;
+      }
+      case 4100: {
+        const repairsQuery2 = client3.query(
+          `SELECT repair_id, talon_id, isended FROM repairs WHERE talon_id = ${temp_request_7.repair.talon_id} and isended = ${temp_request_7.repair.isended};`,
+        );
+        const [repairsResult] = await Promise.all([repairsQuery2]);
+        if (repairsResult.rows[0])
+          client3.query(
+            `UPDATE repairs SET summary = '${temp_request_7.repair.summary}' where repair_id = ${repairsResult.rows[0].repair_id};`,
+          );
+        client2.query(
+          `UPDATE repairs SET summary = '${temp_request_7.repair.summary}' where repair_id = ${temp_request_7.repair.repair_id};`,
+        );
+        break;
+      }
+    }
+  } catch (err) {
+    console.error('Error:', err.message);
+  }
+}
+
+//8)	Видалення
+async function Select_8() {
+  try {
   } catch (err) {
     console.error('Error:', err.message);
   }
@@ -177,3 +333,6 @@ async function Select_5() {
 // Select_3();
 // Select_4();
 // Select_5();
+// Select_6();
+Select_7();
+// Select_8();
