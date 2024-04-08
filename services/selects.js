@@ -40,14 +40,21 @@ export class AllSelectsService {
   //1)	Сервісні центри, де є в наявності конкретна деталь для ремонту
   async Select_1(req, res) {
     try {
-      const arr = req.body.dtsc_id;
-      const detail_string_arr = arr.join(',');
+      const arr = req.body.details_names;
+      const detail_string_arr = arr.map((element) => `'${element}'`).join(',');
+
+      const repairsQuery = center.query(
+        `SELECT detail_id FROM details where detail_name in (${detail_string_arr})`,
+      );
+      const [detailNamesResult] = await Promise.all([repairsQuery]);
+
+      const detailIdsString = detailNamesResult.rows.map((obj) => obj.detail_id).join(', ');
 
       const repairsQuery1 = client2.query(
-        `SELECT sc_id FROM details_sc where dtsc_id in (${detail_string_arr}) and count > 0`,
+        `SELECT sc_id FROM details_sc where dtsc_id in (${detailIdsString}) and count > 0`,
       ); // dtsc_id IN (1, 2, 3, ...)
       const repairsQuery2 = client3.query(
-        `SELECT sc_id FROM details_sc where dtsc_id in (${detail_string_arr}) and count > 0`,
+        `SELECT sc_id FROM details_sc where dtsc_id in (${detailIdsString}) and count > 0`,
       );
       const [repairsResult, detailsResult] = await Promise.all([repairsQuery1, repairsQuery2]);
 
