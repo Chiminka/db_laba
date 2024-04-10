@@ -36,6 +36,10 @@ router.post('/7', block, allSelectsService.Select_7);
 
 //8)	Видалення
 // /http://localhost:3002/api/select/8
-router.delete('/8', block, allSelectsService.Select_8);
+router.post('/8', block, allSelectsService.Select_8);
+
+//9)	Усі центральні вибірки
+// /http://localhost:3002/api/select/9
+router.post('/9', allSelectsService.Select_9);
 
 export default router;
