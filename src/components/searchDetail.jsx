@@ -53,7 +53,7 @@ const SearchDetail = () => {
         </button>
       </form>
       <div className="w-2/3 justify-center flex p-5">
-        <table class="border-collapse border border-slate-500 w-1/2 h-fit">
+        <table class="border-collapse border border-slate-500 w-3/4 h-fit text-emerald-500">
           <thead>
             <tr>
               <th className="border border-slate-600 p-2 text-center">SC ID</th>

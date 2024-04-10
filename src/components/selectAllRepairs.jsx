@@ -86,9 +86,9 @@ export default function SearchByTalon() {
         </button>
       </form>
       <div className='w-full'>
-        <div className="justify-center flex p-5 w-full">
-          <p className="font-semibold text-lg m-2 text-zinc-300">Ремонти:</p>
-          <table class="border-collapse border border-slate-500 w-full h-fit">
+        <div className="justify-center flex p-5 w-full flex-col items-center">
+          <p className="font-semibold text-2xl m-2 text-zinc-300 w-full text-center">Ремонти:</p>
+          <table class="border-collapse border border-slate-500 w-full h-fit text-emerald-500">
             <thead>
               <tr>
                 <th className="border border-slate-600 p-2 text-center">Repair ID</th>
@@ -103,9 +103,9 @@ export default function SearchByTalon() {
             <tbody>{drawTableBody(result, 4)}</tbody>
           </table>
         </div>
-        <div className="justify-center flex p-5 w-full">
-          <p className="font-semibold text-lg m-2 text-zinc-300">Деталі:</p>
-          <table class="border-collapse border border-slate-500 w-3/4 h-fit">
+        <div className="justify-center flex p-5 w-full flex-col items-center">
+          <p className="font-semibold text-2xl m-2 text-zinc-300 text-center">Деталі:</p>
+          <table class="border-collapse border border-slate-500 w-4/5 h-fit text-emerald-500">
             <thead>
               <tr>
                 <th className="border border-slate-600 p-2 text-center">Detail ID</th>
@@ -116,9 +116,9 @@ export default function SearchByTalon() {
             <tbody>{drawTableBody(result, 1)}</tbody>
           </table>
         </div>
-        <div className="w-full justify-center flex p-5">
-          <p className="font-semibold text-lg m-2 text-zinc-300">Продукти:</p>
-          <table class="border-collapse border border-slate-500 w-3/4 h-fit">
+        <div className="w-full justify-center flex p-5 flex-col items-center">
+          <p className="font-semibold text-2xl m-2 text-zinc-300 text-center">Продукти:</p>
+          <table class="border-collapse border border-slate-500 w-4/5 h-fit text-emerald-500">
             <thead>
               <tr>
                 <th className="border border-slate-600 p-2 text-center">Product ID</th>
@@ -131,9 +131,9 @@ export default function SearchByTalon() {
             <tbody>{drawTableBody(result, 2)}</tbody>
           </table>
         </div>
-        <div className="w-full justify-center flex p-5">
-          <p className="font-semibold text-lg m-2 text-zinc-300">Талони:</p>
-          <table class="border-collapse border border-slate-500 w-3/4 h-fit">
+        <div className="w-full justify-center flex p-5 flex-col items-center">
+          <p className="font-semibold text-2xl m-2 text-zinc-300 text-center">Талони:</p>
+          <table class="border-collapse border border-slate-500 w-4/5 h-fit text-emerald-500">
             <thead>
               <tr>
                 <th className="border border-slate-600 p-2 text-center">Talon ID</th>

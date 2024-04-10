@@ -49,7 +49,7 @@ const SelectActiveRepairsFromServices = () => {
             <button type='submit' className='m-5 p-2 bg-[#779cc1] rounded-md text-lg font-semibold hover:bg-[#3c556e] transition ease-in delay-150'>Виконати запит</button>
           </form>
           <div className="w-2/3 flex justify-center p-5">
-            <table class="border-collapse border border-slate-500 w-1/2 h-fit">
+            <table class="border-collapse border border-slate-500 w-3/4 h-fit text-emerald-500">
               <thead>
                 <tr>
                     <th className='border border-slate-600 p-2 text-center'>Repair ID</th>
